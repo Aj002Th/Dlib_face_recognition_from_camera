@@ -1,0 +1,6 @@
+__pycache__/
+.idea/
+*.whl
+.vscode/
+data/data_faces_from_camera/
+features_all.csv
