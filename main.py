@@ -2,16 +2,17 @@ from tkinter import *
 from tkinter.ttk import *
 from typing import Dict
 import logging
+import sqlite3
 import get_faces_from_camera_tkinter
-import face_reco_from_camera_ot
+import face_reco_from_camera_ot2
 
 # 全局量
 username = ''
 password = ''
 step2WinName = ''
-result = ''
+result = 0 # 0: 失败 1: 成功
 
-# 布局
+# 入口布局
 class WinGUI(Tk):
     widget_dic: Dict[str, Widget] = {}
 
@@ -93,7 +94,7 @@ class WinGUI(Tk):
         label.place(x=145, y=24, width=278, height=98)
         return label
 
-# 行为
+# 入口行为
 class Win(WinGUI):
     def __init__(self):
         super().__init__()
@@ -101,7 +102,7 @@ class Win(WinGUI):
 
     def register(self, evt):
         global step2WinName
-        logging.info("调用register", evt)
+        logging.info("Win - register事件", evt)
         self.printInput()
         self.getInput()
         step2WinName = "registerWin"
@@ -110,7 +111,7 @@ class Win(WinGUI):
 
     def login(self, evt):
         global step2WinName
-        print("调用login", evt)
+        print("Win - login事件", evt)
         self.printInput()
         self.getInput()
         step2WinName = "loginWin"
@@ -138,17 +139,72 @@ class Win(WinGUI):
         username = self.getUsername()
         password = self.getPassword()
 
+# result布局
+class ResultWinGUI(Tk):
+    widget_dic: Dict[str, Widget] = {}
+    def __init__(self, information):
+        self.information = information
+        super().__init__()
+        self.__win()
+        self.widget_dic["tk_label_result_label"] = self.__tk_label_result_label(self)
+        self.widget_dic["tk_button_ok_button"] = self.__tk_button_ok_button(self)
+
+    def __win(self):
+        self.title(self.information)
+        # 设置窗口大小、居中
+        width = 435
+        height = 267
+        screenwidth = self.winfo_screenwidth()
+        screenheight = self.winfo_screenheight()
+        geometry = '%dx%d+%d+%d' % (width, height, (screenwidth - width) / 2, (screenheight - height) / 2)
+        self.geometry(geometry)
+        self.resizable(width=False, height=False)
+
+        # 自动隐藏滚动条
+    def scrollbar_autohide(self,bar,widget):
+        self.__scrollbar_hide(bar,widget)
+        widget.bind("<Enter>", lambda e: self.__scrollbar_show(bar,widget))
+        bar.bind("<Enter>", lambda e: self.__scrollbar_show(bar,widget))
+        widget.bind("<Leave>", lambda e: self.__scrollbar_hide(bar,widget))
+        bar.bind("<Leave>", lambda e: self.__scrollbar_hide(bar,widget))
+    
+    def __scrollbar_show(self,bar,widget):
+        bar.lift(widget)
+
+    def __scrollbar_hide(self,bar,widget):
+        bar.lower(widget)
+        
+    def __tk_label_result_label(self,parent):
+        label = Label(parent,text="登录成功",anchor="center")
+        label.place(x=0, y=2, width=432, height=165)
+        return label
+
+    def __tk_button_ok_button(self,parent):
+        btn = Button(parent, text="确定")
+        btn.place(x=200, y=200, width=50, height=30)
+        return btn
+
+# result行为
+class ResultWin(ResultWinGUI):
+    def __init__(self, information):
+        super().__init__(information)
+        self.__event_bind()
+
+    def OK(self,evt):
+        print("ResultWin - OK 事件",evt)
+        self.destroy()
+        
+    def __event_bind(self):
+        self.widget_dic["tk_button_ok_button"].bind('<Button-1>',self.OK)
+        
 # 包装层
 class Face_Rigister_Tk(get_faces_from_camera_tkinter.Face_Register):
     def __init__(self):
         super().__init__()
 
-class Face_Recognizer_Tk(face_reco_from_camera_ot.Face_Recognizer):
-    def __init__(self):
-        super().__init__()
-
-    
-
+class Face_Recognizer_Tk(face_reco_from_camera_ot2.Face_Recognizer):
+    def __init__(self, username):
+        super().__init__(username)
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
@@ -156,21 +212,31 @@ if __name__ == "__main__":
     # 入口
     win = Win()
     win.mainloop()
+    logging.debug(f'username: {username}')
+    logging.debug(f'password: {password}')
 
     # 检查输入合法性
+    # select * from user where username = username and password = password
+    # ...
 
     # 人脸识别
     if step2WinName == "registerWin":
         Face_Register_con = Face_Rigister_Tk()
         Face_Register_con.run()
     elif step2WinName == "loginWin":
-        Face_Recognizer_con = Face_Recognizer_Tk()
-        Face_Recognizer_con.run()
+        Face_Recognizer_con = Face_Recognizer_Tk(username)
+        result = Face_Recognizer_con.run()
+        information = ""
+        if result:
+            logging.info("登录成功")
+            information = "登录成功"
+        else:
+            logging.info("登录失败")
+            information = "登录成功"
+        resultWin = ResultWin(information)
+        resultWin.mainloop()
     else:
-        logging.info("未知的step2WinName")
-
-    # 结果
-
-
-    print(f'username: {username}')
-    print(f'password: {password}')
+        err = "未知的step2WinName"
+        logging.info(err)
+        resultWin = ResultWin(f"出现错误：{err}")
+        resultWin.mainloop()
