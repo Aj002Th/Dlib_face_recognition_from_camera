@@ -1,10 +1,17 @@
 from tkinter import *
 from tkinter.ttk import *
 from typing import Dict
+import logging
+import get_faces_from_camera_tkinter
+import face_reco_from_camera_ot
+
+# 全局量
+username = ''
+password = ''
+step2WinName = ''
+result = ''
 
 # 布局
-
-
 class WinGUI(Tk):
     widget_dic: Dict[str, Widget] = {}
 
@@ -87,20 +94,27 @@ class WinGUI(Tk):
         return label
 
 # 行为
-
-
 class Win(WinGUI):
     def __init__(self):
         super().__init__()
         self.__event_bind()
 
     def register(self, evt):
-        print("调用register", evt)
+        global step2WinName
+        logging.info("调用register", evt)
         self.printInput()
+        self.getInput()
+        step2WinName = "registerWin"
+        self.destroy()
+        
 
     def login(self, evt):
+        global step2WinName
         print("调用login", evt)
         self.printInput()
+        self.getInput()
+        step2WinName = "loginWin"
+        self.destroy()
 
     def __event_bind(self):
         self.widget_dic["tk_button_register_button"].bind(
@@ -118,8 +132,45 @@ class Win(WinGUI):
     def printInput(self):
         print(f'username: {self.getUsername()}')
         print(f'password: {self.getPassword()}')
+    
+    def getInput(self):
+        global username, password
+        username = self.getUsername()
+        password = self.getPassword()
+
+# 包装层
+class Face_Rigister_Tk(get_faces_from_camera_tkinter.Face_Register):
+    def __init__(self):
+        super().__init__()
+
+class Face_Recognizer_Tk(face_reco_from_camera_ot.Face_Recognizer):
+    def __init__(self):
+        super().__init__()
+
+    
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+
+    # 入口
     win = Win()
     win.mainloop()
+
+    # 检查输入合法性
+
+    # 人脸识别
+    if step2WinName == "registerWin":
+        Face_Register_con = Face_Rigister_Tk()
+        Face_Register_con.run()
+    elif step2WinName == "loginWin":
+        Face_Recognizer_con = Face_Recognizer_Tk()
+        Face_Recognizer_con.run()
+    else:
+        logging.info("未知的step2WinName")
+
+    # 结果
+
+
+    print(f'username: {username}')
+    print(f'password: {password}')
