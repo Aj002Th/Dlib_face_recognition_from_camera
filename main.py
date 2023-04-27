@@ -3,7 +3,7 @@ from tkinter.ttk import *
 from typing import Dict
 import logging
 import sqlite3
-import get_faces_from_camera_tkinter
+import get_faces_from_camera_tkinter2
 import face_reco_from_camera_ot2
 
 # 全局量
@@ -11,6 +11,7 @@ username = ''
 password = ''
 step2WinName = ''
 result = 0 # 0: 失败 1: 成功
+information = ''
 
 # 入口布局
 class WinGUI(Tk):
@@ -102,7 +103,7 @@ class Win(WinGUI):
 
     def register(self, evt):
         global step2WinName
-        logging.info("Win - register事件", evt)
+        logging.info("Win - register事件")
         self.printInput()
         self.getInput()
         step2WinName = "registerWin"
@@ -111,7 +112,7 @@ class Win(WinGUI):
 
     def login(self, evt):
         global step2WinName
-        print("Win - login事件", evt)
+        print("Win - login事件")
         self.printInput()
         self.getInput()
         step2WinName = "loginWin"
@@ -175,7 +176,7 @@ class ResultWinGUI(Tk):
         bar.lower(widget)
         
     def __tk_label_result_label(self,parent):
-        label = Label(parent,text="登录成功",anchor="center")
+        label = Label(parent,text=self.information,anchor="center")
         label.place(x=0, y=2, width=432, height=165)
         return label
 
@@ -198,13 +199,92 @@ class ResultWin(ResultWinGUI):
         self.widget_dic["tk_button_ok_button"].bind('<Button-1>',self.OK)
         
 # 包装层
-class Face_Rigister_Tk(get_faces_from_camera_tkinter.Face_Register):
-    def __init__(self):
-        super().__init__()
+class Face_Rigister_Tk(get_faces_from_camera_tkinter2.Face_Register):
+    def __init__(self, username):
+        super().__init__(username)
 
 class Face_Recognizer_Tk(face_reco_from_camera_ot2.Face_Recognizer):
     def __init__(self, username):
         super().__init__(username)
+
+# db操作
+class DB:
+    def __init__(self, file):
+        # 连接数据库
+        self.conn = sqlite3.connect(file)
+        logging.info("Opened database successfully")
+
+        # 创建 user 表
+        self.conn.execute('''
+        CREATE TABLE  IF NOT EXISTS user(
+            id INTEGER primary key AUTOINCREMENT,
+            username text,
+            password text
+        )
+        ''')
+
+    def insert(self, username, password):
+        self.conn.execute(f'''
+        INSERT INTO user (username, password) VALUES ('{username}', '{password}')
+        ''')
+        self.conn.commit()
+        logging.info("Records created successfully")
+    
+    def select(self, username, password):
+        cursor = self.conn.execute(f'''
+        SELECT * FROM user WHERE username = '{username}' AND password = '{password}'
+        ''')
+        return cursor.fetchall()
+    
+    def selectByUsername(self, username):
+        cursor = self.conn.execute(f'''
+        SELECT * FROM user WHERE username = '{username}'
+        ''')
+        return cursor.fetchall()
+
+def bussiness():
+    global information # 要修改,得声明一下
+
+    # 连接数据库
+    db = DB('system.db')
+    rows = db.selectByUsername(username)
+
+    if step2WinName == "registerWin":
+        # 用户名重复不给注册
+        if len(rows) > 0:
+            information = "用户名已存在"
+            return
+        
+        # 人脸录入
+        Face_Register_con = Face_Rigister_Tk(username)
+        result = Face_Register_con.run()
+
+        # 查看结果
+        if result:
+            information = "注册成功"
+            db.insert(username, password)
+        else:
+            information = "注册失败"
+
+    elif step2WinName == "loginWin":
+        # 检查用户名密码
+        rows = db.select(username, password)
+        if len(rows) == 0:
+            information = "用户名或密码错误"
+            return
+
+        # 人脸识别
+        Face_Recognizer_con = Face_Recognizer_Tk(username)
+        result = Face_Recognizer_con.run()
+
+        # 查看结果
+        if result:
+            information = "登录成功"
+        else:
+            information = "登录失败"
+    else:
+        # 不明情况
+        information = "出现错误: 未知的step2WinName"
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
@@ -216,27 +296,15 @@ if __name__ == "__main__":
     logging.debug(f'password: {password}')
 
     # 检查输入合法性
-    # select * from user where username = username and password = password
-    # ...
+    if username == "" or password == "":
+        logging.info("用户名或密码不能为空")
+        resultWin = ResultWin("用户名或密码不能为空")
+        resultWin.mainloop()
+        exit(0)
 
-    # 人脸识别
-    if step2WinName == "registerWin":
-        Face_Register_con = Face_Rigister_Tk()
-        Face_Register_con.run()
-    elif step2WinName == "loginWin":
-        Face_Recognizer_con = Face_Recognizer_Tk(username)
-        result = Face_Recognizer_con.run()
-        information = ""
-        if result:
-            logging.info("登录成功")
-            information = "登录成功"
-        else:
-            logging.info("登录失败")
-            information = "登录成功"
-        resultWin = ResultWin(information)
-        resultWin.mainloop()
-    else:
-        err = "未知的step2WinName"
-        logging.info(err)
-        resultWin = ResultWin(f"出现错误：{err}")
-        resultWin.mainloop()
+    # 业务逻辑: register or login
+    bussiness()
+    
+    logging.info(information)
+    resultWin = ResultWin(information)
+    resultWin.mainloop()
