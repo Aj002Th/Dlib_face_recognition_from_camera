@@ -3,8 +3,9 @@ from tkinter.ttk import *
 from typing import Dict
 import logging
 import sqlite3
-import get_faces_from_camera_tkinter2
-import face_reco_from_camera_ot2
+import get_faces_from_camera_tkinter2 as get_face
+# import face_reco_from_camera_ot2 as face_reco
+import face_reco_from_camera_with_name as face_reco
 
 # 全局量
 username = ''
@@ -199,11 +200,11 @@ class ResultWin(ResultWinGUI):
         self.widget_dic["tk_button_ok_button"].bind('<Button-1>',self.OK)
         
 # 包装层
-class Face_Rigister_Tk(get_faces_from_camera_tkinter2.Face_Register):
+class Face_Rigister_Tk(get_face.Face_Register):
     def __init__(self, username):
         super().__init__(username)
 
-class Face_Recognizer_Tk(face_reco_from_camera_ot2.Face_Recognizer):
+class Face_Recognizer_Tk(face_reco.Face_Recognizer):
     def __init__(self, username):
         super().__init__(username)
 
