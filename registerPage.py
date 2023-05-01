@@ -8,7 +8,7 @@ from metaData import *
 class WinGUI(Tk):
     widget_dic: Dict[str, Widget] = {}
 
-    def __init__(self, title):
+    def __init__(self):
         super().__init__()
         self.__win()
         self.widget_dic["tk_input_username_input"] = self.__tk_input_username_input(
@@ -71,14 +71,19 @@ class WinGUI(Tk):
         label.place(x=120, y=160, width=87, height=41)
         return label
 
+    # def __tk_button_register_button(self, parent):
+    #     btn = Button(parent, text="去注册")
+    #     btn.place(x=170, y=330, width=104, height=44)
+    #     return btn
+
+    # def __tk_button_login_button(self, parent):
+    #     btn = Button(parent, text="登录")
+    #     btn.place(x=300, y=330, width=104, height=44)
+    #     return btn
+    
     def __tk_button_register_button(self, parent):
         btn = Button(parent, text="注册")
-        btn.place(x=170, y=330, width=104, height=44)
-        return btn
-
-    def __tk_button_login_button(self, parent):
-        btn = Button(parent, text="登录")
-        btn.place(x=300, y=330, width=104, height=44)
+        btn.place(x=(170+300)/2, y=330, width=104, height=44)
         return btn
 
     def __tk_label_title(self, parent):
@@ -95,27 +100,25 @@ class Win(WinGUI):
         self.__event_bind()
 
     def register(self, evt):
-        global step2WinName
-        logging.info("Win - register事件")
+        logging.info("Win - gotoRegister事件")
         self.printInput()
         self.getInput()
-        step2WinName = "registerWin"
+        self.metaData.step2WinName = "registerWin"
         self.destroy()
         
 
-    def login(self, evt):
-        global step2WinName
-        print("Win - login事件")
-        self.printInput()
-        self.getInput()
-        step2WinName = "loginWin"
-        self.destroy()
+    # def login(self, evt):
+    #     print("Win - login事件")
+    #     self.printInput()
+    #     self.getInput()
+    #     self.metaData.step2WinName = "loginWin"
+    #     self.destroy()
 
     def __event_bind(self):
         self.widget_dic["tk_button_register_button"].bind(
             '<Button-1>', self.register)
-        self.widget_dic["tk_button_login_button"].bind(
-            '<Button-1>', self.login)
+        # self.widget_dic["tk_button_login_button"].bind(
+        #     '<Button-1>', self.login)
 
     # utils methond
     def getUsername(self):

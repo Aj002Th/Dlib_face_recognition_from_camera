@@ -4,7 +4,7 @@ from typing import Dict
 from metaData import *
 
 # result布局
-class ResultWinGUI(Tk):
+class WinGUI(Tk):
     widget_dic: Dict[str, Widget] = {}
     information = ""
 
@@ -52,7 +52,7 @@ class ResultWinGUI(Tk):
 
 
 # result行为
-class ResultWin(ResultWinGUI):
+class Win(WinGUI):
     def __init__(self, information):
         super().__init__(information)
         self.__event_bind()

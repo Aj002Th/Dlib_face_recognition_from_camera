@@ -2,10 +2,10 @@ from tkinter import *
 from tkinter.ttk import *
 from db import *
 from metaData import *
-from result import *
 import logging
-import login
-import register
+import loginPage
+import registerPage
+import resultPage 
 import get_faces_from_camera_tkinter2 as get_face
 import face_reco_from_camera_ot2 as face_reco
 # import face_reco_from_camera_with_name as face_reco
@@ -72,7 +72,7 @@ def main():
     # 主循环
     while not metaData.close:
         # 入口
-        win = login.Win(metaData)
+        win = loginPage.Win(metaData)
         win.mainloop()
         logging.debug(f'username: {metaData.username}')
         logging.debug(f'password: {metaData.password}')
@@ -80,7 +80,7 @@ def main():
         # 检查输入合法性
         if metaData.username == "" or metaData.password == "":
             logging.info("用户名或密码不能为空")
-            resultWin = ResultWin("用户名或密码不能为空")
+            resultWin = resultPage.Win("用户名或密码不能为空")
             resultWin.mainloop()
             continue
 
@@ -89,7 +89,7 @@ def main():
         
         # 输出结果
         logging.info(metaData.information)
-        resultWin = ResultWin(metaData.information)
+        resultWin = resultPage.Win(metaData.information)
         resultWin.mainloop()
 
 
