@@ -4,15 +4,19 @@ from typing import Dict
 import logging
 import sqlite3
 import get_faces_from_camera_tkinter2 as get_face
-# import face_reco_from_camera_ot2 as face_reco
-import face_reco_from_camera_with_name as face_reco
+import face_reco_from_camera_ot2 as face_reco
+# import face_reco_from_camera_with_name as face_reco
+
 
 # 全局量
-username = ''
-password = ''
-step2WinName = ''
-result = 0 # 0: 失败 1: 成功
-information = ''
+class MetaData:
+    def __init__(self) -> None:
+        username = ''
+        password = ''
+        step2WinName = ''
+        result = 0 # 0: 失败 1: 成功
+        information = ''
+
 
 # 入口布局
 class WinGUI(Tk):
@@ -96,10 +100,12 @@ class WinGUI(Tk):
         label.place(x=145, y=24, width=278, height=98)
         return label
 
+
 # 入口行为
 class Win(WinGUI):
-    def __init__(self):
+    def __init__(self, metaData:MetaData):
         super().__init__()
+        self.metaData = metaData
         self.__event_bind()
 
     def register(self, evt):
@@ -137,9 +143,9 @@ class Win(WinGUI):
         print(f'password: {self.getPassword()}')
     
     def getInput(self):
-        global username, password
-        username = self.getUsername()
-        password = self.getPassword()
+        self.metaData.username = self.getUsername()
+        self.metaData.password = self.getPassword()
+
 
 # result布局
 class ResultWinGUI(Tk):
@@ -186,6 +192,7 @@ class ResultWinGUI(Tk):
         btn.place(x=200, y=200, width=50, height=30)
         return btn
 
+
 # result行为
 class ResultWin(ResultWinGUI):
     def __init__(self, information):
@@ -198,7 +205,8 @@ class ResultWin(ResultWinGUI):
         
     def __event_bind(self):
         self.widget_dic["tk_button_ok_button"].bind('<Button-1>',self.OK)
-        
+
+
 # 包装层
 class Face_Rigister_Tk(get_face.Face_Register):
     def __init__(self, username):
@@ -207,6 +215,7 @@ class Face_Rigister_Tk(get_face.Face_Register):
 class Face_Recognizer_Tk(face_reco.Face_Recognizer):
     def __init__(self, username):
         super().__init__(username)
+
 
 # db操作
 class DB:
@@ -243,12 +252,11 @@ class DB:
         ''')
         return cursor.fetchall()
 
-def bussiness():
-    global information # 要修改,得声明一下
 
+def bussiness(metaData):
     # 连接数据库
     db = DB('system.db')
-    rows = db.selectByUsername(username)
+    rows = db.selectByUsername(metaData.username)
 
     if step2WinName == "registerWin":
         # 用户名重复不给注册
@@ -257,55 +265,65 @@ def bussiness():
             return
         
         # 人脸录入
-        Face_Register_con = Face_Rigister_Tk(username)
+        Face_Register_con = Face_Rigister_Tk(metaData.username)
         result = Face_Register_con.run()
 
         # 查看结果
         if result:
-            information = "注册成功"
-            db.insert(username, password)
+            metaData.information = "注册成功"
+            db.insert(metaData.username, metaData.password)
         else:
-            information = "注册失败"
+            metaData.information = "注册失败"
 
     elif step2WinName == "loginWin":
         # 检查用户名密码
-        rows = db.select(username, password)
+        rows = db.select(metaData.username, metaData.password)
         if len(rows) == 0:
-            information = "用户名或密码错误"
+            metaData.information = "用户名或密码错误"
             return
 
         # 人脸识别
-        Face_Recognizer_con = Face_Recognizer_Tk(username)
+        Face_Recognizer_con = Face_Recognizer_Tk(metaData.username)
         result = Face_Recognizer_con.run()
 
         # 查看结果
         if result:
-            information = "登录成功"
+            metaData.information = "登录成功"
         else:
-            information = "登录失败"
+            metaData.information = "登录失败"
     else:
         # 不明情况
-        information = "出现错误: 未知的step2WinName"
+        metaData.information = "出现错误: 未知的step2WinName"
 
-if __name__ == "__main__":
+
+def main():
+    # 初始化日志
     logging.basicConfig(level=logging.INFO)
 
+    # metaData
+    metaData  = MetaData()
+
     # 入口
-    win = Win()
+    win = Win(metaData)
     win.mainloop()
-    logging.debug(f'username: {username}')
-    logging.debug(f'password: {password}')
+    logging.debug(f'username: {metaData.username}')
+    logging.debug(f'password: {metaData.password}')
 
     # 检查输入合法性
-    if username == "" or password == "":
+    if metaData.username == "" or metaData.password == "":
         logging.info("用户名或密码不能为空")
         resultWin = ResultWin("用户名或密码不能为空")
         resultWin.mainloop()
         exit(0)
 
     # 业务逻辑: register or login
-    bussiness()
+    bussiness(metaData)
     
-    logging.info(information)
-    resultWin = ResultWin(information)
+    # 输出结果
+    logging.info(metaData.information)
+    resultWin = ResultWin(metaData.information)
     resultWin.mainloop()
+
+
+if __name__ == "__main__":
+    main()
