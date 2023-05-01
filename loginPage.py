@@ -93,12 +93,18 @@ class Win(WinGUI):
         super().__init__()
         self.metaData = metaData
         self.__event_bind()
+    
+    # 中间加一层, 关闭登录页直接退出系统
+    def destroy(self):
+        if self.metaData.step2WinName == 'login':
+            self.metaData.step2WinName = 'exit'
+        super().destroy()
 
     def gotoRegister(self, evt):
         logging.info("Win - gotoRegister事件")
         self.printInput()
         self.getInput()
-        self.metaData.step2WinName = "registerWin"
+        self.metaData.step2WinName = "register"
         self.destroy()
         
 
@@ -106,7 +112,7 @@ class Win(WinGUI):
         print("Win - login事件")
         self.printInput()
         self.getInput()
-        self.metaData.step2WinName = "loginWin"
+        self.metaData.step2WinName = 'judgeInputLogin'
         self.destroy()
 
     def __event_bind(self):

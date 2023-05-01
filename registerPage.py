@@ -21,8 +21,8 @@ class WinGUI(Tk):
             self)
         self.widget_dic["tk_button_register_button"] = self.__tk_button_register_button(
             self)
-        self.widget_dic["tk_button_login_button"] = self.__tk_button_login_button(
-            self)
+        # self.widget_dic["tk_button_login_button"] = self.__tk_button_login_button(
+        #     self)
         self.widget_dic["tk_label_title"] = self.__tk_label_title(self)
 
     def __win(self):
@@ -81,6 +81,7 @@ class WinGUI(Tk):
     #     btn.place(x=300, y=330, width=104, height=44)
     #     return btn
     
+    # new button
     def __tk_button_register_button(self, parent):
         btn = Button(parent, text="注册")
         btn.place(x=(170+300)/2, y=330, width=104, height=44)
@@ -98,12 +99,18 @@ class Win(WinGUI):
         super().__init__()
         self.metaData = metaData
         self.__event_bind()
+    
+    # 中间加一层, 关闭注册页回到登录页
+    def destroy(self):
+        if self.metaData.step2WinName == 'register':
+            self.metaData.step2WinName = 'login'
+        super().destroy()
 
     def register(self, evt):
         logging.info("Win - gotoRegister事件")
         self.printInput()
         self.getInput()
-        self.metaData.step2WinName = "registerWin"
+        self.metaData.step2WinName = "judgeInputRegister"
         self.destroy()
         
 
