@@ -57,7 +57,7 @@ class WinGUI(Tk):
         return ipt
 
     def __tk_input_password_input(self, parent):
-        ipt = Entry(parent)
+        ipt = Entry(parent, show="*")
         ipt.place(x=230, y=240, width=199, height=38)
         return ipt
 
