@@ -148,6 +148,17 @@ class Face_Recognizer:
             # 修改录入的人脸姓名 / Modify names in face_name_known_list to chinese name
             self.face_name_known_list[0] = '张三'
             # self.face_name_known_list[1] = '张四'.encode('utf-8').decode()
+    
+    # 模式的提示文字 / Info of mode
+    def mode_to_notes(self, mode=None):
+        if mode == None:
+            return 'please look at the camera'
+        elif mode == 'blink':
+            return 'please blink your eyes'
+        elif mode == 'mouth':
+            return 'please open your mouth'
+        elif mode == 'nod':
+            return 'please nod your head'
 
     # 处理获取的视频流，进行人脸识别 / Face detection and recognition from input video stream
     def process(self, stream):
@@ -157,20 +168,18 @@ class Face_Recognizer:
         self.current_centroid = (stream.get(cv2.CAP_PROP_FRAME_WIDTH) / 2, stream.get(cv2.CAP_PROP_FRAME_HEIGHT) / 2)
         # 是不是那张脸 / Is it that face?
         face_is = False
-        # 多线程求特征 / Multi-threaded feature extraction
+        # 人脸计时器 / Face timer
+        face_timer = 0
         if self.get_face_database():
             while stream.isOpened():
+                face_timer += 1
                 self.frame_cnt += 1
                 logging.debug("Frame %d starts", self.frame_cnt)
                 flag, img_rd = stream.read()
                 faces = detector(img_rd, 0)
                 kk = cv2.waitKey(1)
 
-                note = 'please look at the camera'
-                if liveness.mode() == 'blink':
-                    note = 'please blink your eyes'
-                elif liveness.mode() == 'mouth':
-                    note = 'please open your mouth'
+                note = self.mode_to_notes(liveness.mode())
                 self.draw_note(img_rd, note)
                 
                 # 2. 检测到人脸 / when face detected
@@ -194,13 +203,18 @@ class Face_Recognizer:
                         e_distance = self.return_euclidean_distance(feature, self.face_feature)
                         if e_distance < 0.4:
                             face_is = True
+                            face_timer = 0
                             liveness.compute(shape=shape, frame_cnt=self.frame_cnt)
                     elif face_is == True:
+                        face_timer = 0
                         liveness.compute(shape=shape, frame_cnt=self.frame_cnt)
                 
                 cv2.imshow("camera", img_rd)
                 if liveness.check(frame_cnt=self.frame_cnt):
                     return True
+                # 目标脸一直没出现
+                elif face_timer > 233:
+                    return False
                 # 按下 q 键退出 / Press 'q' to quit
                 if kk == ord('q'):
                     break
@@ -222,9 +236,9 @@ class Face_Recognizer:
         
         return res
 
-# if __name__ == '__main__':
-#     name = ''
-#     face_reco = Face_Recognizer(name)
-#     flg = face_reco.process(cv2.VideoCapture(0))
-#     if flg == True:
-#         print(f'welcome {face_reco.name}')
+if __name__ == '__main__':
+    name = 'Heng Li'
+    face_reco = Face_Recognizer(name)
+    flg = face_reco.process(cv2.VideoCapture(0))
+    if flg == True:
+        print(f'welcome {face_reco.name}')
