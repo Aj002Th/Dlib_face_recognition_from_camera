@@ -148,6 +148,17 @@ class Face_Recognizer:
             # 修改录入的人脸姓名 / Modify names in face_name_known_list to chinese name
             self.face_name_known_list[0] = '张三'
             # self.face_name_known_list[1] = '张四'.encode('utf-8').decode()
+    
+    # 模式的提示文字 / Info of mode
+    def mode_to_notes(self, mode=None):
+        if mode == None:
+            return 'please look at the camera'
+        elif mode == 'blink':
+            return 'please blink your eyes'
+        elif mode == 'mouth':
+            return 'please open your mouth'
+        elif mode == 'nod':
+            return 'please nod your head'
 
     # 处理获取的视频流，进行人脸识别 / Face detection and recognition from input video stream
     def process(self, stream):
@@ -157,7 +168,6 @@ class Face_Recognizer:
         self.current_centroid = (stream.get(cv2.CAP_PROP_FRAME_WIDTH) / 2, stream.get(cv2.CAP_PROP_FRAME_HEIGHT) / 2)
         # 是不是那张脸 / Is it that face?
         face_is = False
-        # 多线程求特征 / Multi-threaded feature extraction
         if self.get_face_database():
             while stream.isOpened():
                 self.frame_cnt += 1
@@ -166,11 +176,7 @@ class Face_Recognizer:
                 faces = detector(img_rd, 0)
                 kk = cv2.waitKey(1)
 
-                note = 'please look at the camera'
-                if liveness.mode() == 'blink':
-                    note = 'please blink your eyes'
-                elif liveness.mode() == 'mouth':
-                    note = 'please open your mouth'
+                note = self.mode_to_notes(liveness.mode())
                 self.draw_note(img_rd, note)
                 
                 # 2. 检测到人脸 / when face detected
@@ -223,7 +229,7 @@ class Face_Recognizer:
         return res
 
 # if __name__ == '__main__':
-#     name = ''
+#     name = 'Heng Li'
 #     face_reco = Face_Recognizer(name)
 #     flg = face_reco.process(cv2.VideoCapture(0))
 #     if flg == True:
