@@ -70,6 +70,14 @@ class Face_Recognizer:
         self.font_chinese = ImageFont.truetype("simsun.ttc", 30)
         self.current_centroid = None
 
+        # 日志初始化 / Logging initialization
+        self.log_path = os.path.join(os.curdir, 'logs')
+        if os.path.exists(self.log_path) == False:
+            os.makedirs(self.log_path)
+        if os.path.isfile(os.path.join(self.log_path, 'log.txt')) == False:
+            open(os.path.join(self.log_path, 'log.txt'), 'w').close()
+        logging.basicConfig(filename=os.path.join(self.log_path, 'log.txt'), filemode="a", format="%(asctime)s %(name)s:%(levelname)s:%(message)s", datefmt="%d-%M-%Y %H:%M:%S", level=logging.INFO)
+
     # 从 "features_all.csv" 读取录入人脸特征 / Read known faces from "features_all.csv"
     def get_face_database(self):
         if os.path.exists("data/features_all.csv"):
@@ -159,6 +167,24 @@ class Face_Recognizer:
             return 'please open your mouth'
         elif mode == 'nod':
             return 'please nod your head'
+    
+    # 日志记录 / Logging
+    def write_log_to_file(self, img, stat=None):
+        time_str = time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime())
+        # 保存图片到 log 目录 / Save images to log file
+        img_path = os.path.join(self.log_path, 'img_face')
+        if not os.path.exists(img_path):
+            os.makedirs(img_path)
+        img_path = os.path.join(img_path, time_str + '.jpg')
+        cv2.imwrite(img_path, img)
+
+        # 保存识别信息到 log.txt / Save information to log.txt
+        log_info = ''
+        log_info += 'Name: ' + str(self.name) + '\n\t'
+        log_info += 'Image path: ' + str(img_path) + '\n\t'
+        log_info += 'Stat: ' + str(stat) + '\n\t'
+        logging.info(log_info)
+        
 
     # 处理获取的视频流，进行人脸识别 / Face detection and recognition from input video stream
     def process(self, stream):
@@ -170,6 +196,8 @@ class Face_Recognizer:
         face_is = False
         # 人脸计时器 / Face timer
         face_timer = 0
+        # 开始时间 / Start time
+        start_time = time.time()
         if self.get_face_database():
             while stream.isOpened():
                 face_timer += 1
@@ -210,13 +238,18 @@ class Face_Recognizer:
                         liveness.compute(shape=shape, frame_cnt=self.frame_cnt)
                 
                 cv2.imshow("camera", img_rd)
-                if liveness.check(frame_cnt=self.frame_cnt):
+                if liveness.check(frame_cnt=self.frame_cnt): # 活体检测通过
+                    self.write_log_to_file(img_rd, stat='success')
                     return True
-                # 目标脸一直没出现
-                elif face_timer > 233:
+                elif face_timer > 233: # 目标脸一直没出现
+                    self.write_log_to_file(img_rd, stat='failed with long time no target face')
                     return False
+                if time.time() - start_time > 30: # 30s超时
+                    self.write_log_to_file(img_rd, stat='failed with time out')
+                    return False                
                 # 按下 q 键退出 / Press 'q' to quit
                 if kk == ord('q'):
+                    self.write_log_to_file(img_rd, stat='failed with press q')
                     break
 
                 # 9. 更新 FPS / Update stream FPS
@@ -236,9 +269,9 @@ class Face_Recognizer:
         
         return res
 
-if __name__ == '__main__':
-    name = 'Heng Li'
-    face_reco = Face_Recognizer(name)
-    flg = face_reco.process(cv2.VideoCapture(0))
-    if flg == True:
-        print(f'welcome {face_reco.name}')
+# if __name__ == '__main__':
+#     name = 'Heng Li'
+#     face_reco = Face_Recognizer(name)
+#     flg = face_reco.process(cv2.VideoCapture(0))
+#     if flg == True:
+#         print(f'welcome {face_reco.name}')

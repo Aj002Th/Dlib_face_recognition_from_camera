@@ -245,7 +245,6 @@ class Detector(object):
         return self.mode()
 
     def check(self, frame_cnt=0):
-        print(f'modes: {self.modes}')
         # check if the face is detected, or reset the detector
         if self.current_framecnt != frame_cnt or self.clock >= self.CLOCK_LIMIT:
             self.reset()
