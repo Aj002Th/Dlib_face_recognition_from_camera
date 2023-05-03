@@ -5,3 +5,7 @@ __pycache__/
 data/data_faces_from_camera/
 features_all.csv
 *.db
+*.exe
+dist/
+build/
+*.spec
