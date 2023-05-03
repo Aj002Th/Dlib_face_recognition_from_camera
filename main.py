@@ -85,7 +85,7 @@ def main():
                 metaData.information = "登录成功"
                 metaData.step2WinName = 'resultAndGotoSystem'
             else:
-                metaData.information = "登录失败"
+                metaData.information = "登录失败: 人脸识别不匹配"
                 metaData.step2WinName = 'resultAndGotoLogin'
 
         elif metaData.step2WinName == 'getFace':
@@ -97,7 +97,7 @@ def main():
                 metaData.information = "注册成功"
                 db.insert(metaData.username, metaData.password)
             else:
-                metaData.information = "注册失败"
+                metaData.information = "人脸注册失败: 人脸信息获取失败"
             # 什么结果都是回登录页
             metaData.step2WinName = 'resultAndGotoLogin'
 
