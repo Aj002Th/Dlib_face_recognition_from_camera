@@ -9,7 +9,8 @@ import resultPage
 import get_faces_from_camera_tkinter2 as get_face
 # import face_reco_from_camera_ot2 as face_reco
 import face_reco_from_camera_with_name as face_reco
-
+import logger
+import time
 
 # 包装层
 class Face_Rigister_Tk(get_face.Face_Register):
@@ -20,12 +21,21 @@ class Face_Recognizer_Tk(face_reco.Face_Recognizer):
     def __init__(self, username):
         super().__init__(username)
 
+def audit(log, name, stat):
+    time_str = time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime())
+    log_info = ''
+    log_info += 'Time: ' + str(time_str) + '\n\t'
+    log_info += 'Name: ' + name + '\n\t'
+    log_info += 'Stat: ' + stat + '\n'
+    log.info(log_info)
 
 def main():
     # metaData
     metaData  = MetaData()
     metaData.step2WinName = 'login'
-    logging.basicConfig(level=logging.INFO)
+    logger.loggerInit()
+    loggerDevelop = logging.getLogger('develop')
+    loggerAudit = logging.getLogger('audit')
 
     # 主循环: 用个自动机
     while True:
@@ -35,20 +45,21 @@ def main():
         elif metaData.step2WinName == 'login':
             win = loginPage.Win(metaData)
             win.mainloop()
-            logging.debug(f'username: {metaData.username}')
-            logging.debug(f'password: {metaData.password}')
+            loggerDevelop.debug(f'username: {metaData.username}')
+            loggerDevelop.debug(f'password: {metaData.password}')
             
         elif metaData.step2WinName == 'register':
             win = registerPage.Win(metaData)
             win.mainloop()
-            logging.debug(f'username: {metaData.username}')
-            logging.debug(f'password: {metaData.password}')
+            loggerDevelop.debug(f'username: {metaData.username}')
+            loggerDevelop.debug(f'password: {metaData.password}')
 
         elif metaData.step2WinName == 'judgeInputLogin':
             # 先检查输入合法性
             if metaData.username == "" or metaData.password == "":
                 metaData.information = "登录的用户名或密码不能为空"
                 metaData.step2WinName = 'resultAndGotoLogin'
+                audit(loggerAudit, metaData.username, 'username or password is empty')
                 continue
             # 再检查用户名密码
             db = DB('system.db')
@@ -56,6 +67,7 @@ def main():
             if len(rows) == 0:
                 metaData.information = "用户名或密码错误"
                 metaData.step2WinName = 'resultAndGotoLogin'
+                audit(loggerAudit, metaData.username, 'username or password not match')
                 continue
             # 最后没问题就进入人脸识别
             metaData.step2WinName = 'faceReco'
@@ -102,13 +114,13 @@ def main():
             metaData.step2WinName = 'resultAndGotoLogin'
 
         elif metaData.step2WinName == 'resultAndGotoLogin':
-            logging.info(metaData.information)
+            loggerDevelop.info(metaData.information)
             resultWin = resultPage.Win(metaData.information)
             resultWin.mainloop()
             metaData.step2WinName = 'login' # 重新去登录页
 
         elif metaData.step2WinName == 'resultAndGotoSystem':
-            logging.info(metaData.information)
+            loggerDevelop.info(metaData.information)
             resultWin = resultPage.Win(metaData.information)
             resultWin.mainloop()
             metaData.step2WinName = 'systemPage' # 重新去登录页

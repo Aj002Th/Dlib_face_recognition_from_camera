@@ -9,3 +9,4 @@ features_all.csv
 dist/
 build/
 *.spec
+logs/

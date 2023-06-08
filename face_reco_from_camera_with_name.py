@@ -72,11 +72,7 @@ class Face_Recognizer:
 
         # 日志初始化 / Logging initialization
         self.log_path = os.path.join(os.curdir, 'logs')
-        if os.path.exists(self.log_path) == False:
-            os.makedirs(self.log_path)
-        if os.path.isfile(os.path.join(self.log_path, 'log.txt')) == False:
-            open(os.path.join(self.log_path, 'log.txt'), 'w').close()
-        logging.basicConfig(filename=os.path.join(self.log_path, 'log.txt'), filemode="a", format="%(asctime)s %(name)s:%(levelname)s:%(message)s", datefmt="%d-%M-%Y %H:%M:%S", level=logging.INFO)
+        self.logger = logging.getLogger('audit')
 
     # 从 "features_all.csv" 读取录入人脸特征 / Read known faces from "features_all.csv"
     def get_face_database(self):
@@ -180,10 +176,11 @@ class Face_Recognizer:
 
         # 保存识别信息到 log.txt / Save information to log.txt
         log_info = ''
+        log_info += 'Time: ' + str(time_str) + '\n\t'
         log_info += 'Name: ' + str(self.name) + '\n\t'
         log_info += 'Image path: ' + str(img_path) + '\n\t'
-        log_info += 'Stat: ' + str(stat) + '\n\t'
-        logging.info(log_info)
+        log_info += 'Stat: ' + str(stat) + '\n'
+        self.logger.info(log_info)
         
 
     # 处理获取的视频流，进行人脸识别 / Face detection and recognition from input video stream
